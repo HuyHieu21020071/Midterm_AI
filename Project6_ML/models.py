@@ -63,7 +63,7 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-        self.w1 = nn.Parameter(1, 512)  # first argument should be dim (x)
+        self.w1 = nn.Parameter(1, 512) 
         self.b1 = nn.Parameter(1, 512)
         self.w2 = nn.Parameter(512, 1)
         self.b2 = nn.Parameter(1, 1)
@@ -110,11 +110,11 @@ class RegressionModel(object):
         while loss >= loss_threshold:
             for x, y in dataset.iterate_once(batch_size):
                 loss = self.get_loss(x, y)
-                gw1, gw2, gb1, gb2 = nn.gradients(loss, [self.w1, self.w2, self.b1, self.b2])
-                self.w1.update(gw1, -self.learning_rate)
-                self.w2.update(gw2, -self.learning_rate)
-                self.b1.update(gb1, -self.learning_rate)
-                self.b2.update(gb2, -self.learning_rate)
+                gradients = nn.gradients(loss, [self.w1, self.w2, self.b1, self.b2])
+                self.w1.update(gradients[0], -self.learning_rate)
+                self.w2.update(gradients[1], -self.learning_rate)
+                self.b1.update(gradients[2], -self.learning_rate)
+                self.b2.update(gradients[3], -self.learning_rate)
                 loss = nn.as_scalar(loss)
 
 class DigitClassificationModel(object):
@@ -134,7 +134,7 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-
+        
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -171,7 +171,7 @@ class DigitClassificationModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-
+       
 class LanguageIDModel(object):
     """
     A model for language identification at a single-word granularity.
