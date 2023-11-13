@@ -63,6 +63,11 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.w1 = nn.Parameter(1, 512)  # first argument should be dim (x)
+        self.b1 = nn.Parameter(1, 512)
+        self.w2 = nn.Parameter(512, 1)
+        self.b2 = nn.Parameter(1, 1)
+        self.learning_rate = 0.03
 
     def run(self, x):
         """
@@ -74,6 +79,9 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        hidden_layer = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        predicted_y = nn.AddBias(nn.Linear(hidden_layer, self.w2), self.b2)
+        return predicted_y
 
     def get_loss(self, x, y):
         """
@@ -86,12 +94,28 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        predicted_y = self.run(x)
+        loss = nn.SquareLoss(predicted_y, y)
+        return loss
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 200
+        loss_threshold = 0.02
+        loss = float('inf')
+        
+        while loss >= loss_threshold:
+            for x, y in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                gw1, gw2, gb1, gb2 = nn.gradients(loss, [self.w1, self.w2, self.b1, self.b2])
+                self.w1.update(gw1, -self.learning_rate)
+                self.w2.update(gw2, -self.learning_rate)
+                self.b1.update(gb1, -self.learning_rate)
+                self.b2.update(gb2, -self.learning_rate)
+                loss = nn.as_scalar(loss)
 
 class DigitClassificationModel(object):
     """
