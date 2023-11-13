@@ -134,6 +134,11 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.w1 = nn.Parameter(784, 200)  # first argument should be dim (x)
+        self.b1 = nn.Parameter(1, 200)
+        self.w2 = nn.Parameter(200, 10)
+        self.b2 = nn.Parameter(1, 10)
+        self.learning_rate = 0.5
         
     def run(self, x):
         """
@@ -150,6 +155,9 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        hidden_layer = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        predicted_y = nn.AddBias(nn.Linear(hidden_layer, self.w2), self.b2)
+        return predicted_y
 
     def get_loss(self, x, y):
         """
@@ -165,13 +173,30 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        predicted_y = self.run(x)
+        loss = nn.SoftmaxLoss(predicted_y, y)
+        return loss
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-       
+        batch_size = 100
+        tar_validation = 0.975
+        cur_validation = 0
+
+        while cur_validation < tar_validation:
+            for x, y in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                gradients = nn.gradients(loss, [self.w1, self.w2, self.b1, self.b2])
+                self.w1.update(gradients[0], -self.learning_rate)
+                self.w2.update(gradients[1], -self.learning_rate)
+                self.b1.update(gradients[2], -self.learning_rate)
+                self.b2.update(gradients[3], -self.learning_rate)
+
+            cur_validation = dataset.get_validation_accuracy()
+
 class LanguageIDModel(object):
     """
     A model for language identification at a single-word granularity.
