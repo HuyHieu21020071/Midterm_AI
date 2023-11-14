@@ -40,6 +40,7 @@ def shopSmart(orderList, fruitShops):
             cheapestShop = shop
 
     return str(cheapestShop)
+    return None
 
 
 if __name__ == '__main__':
