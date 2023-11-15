@@ -603,11 +603,11 @@ def mapping(problem, agent) -> Generator:
     '''
     pac_x_0, pac_y_0 = problem.startState
     KB = []
-    all_coords = list(itertools.product(range(problem.getWidth()+2), range(problem.getHeight()+2)))
-    non_outer_wall_coords = list(itertools.product(range(1, problem.getWidth()+1), range(1, problem.getHeight()+1)))
+    all_coords = list(itertools.product(range(problem.getWidth() + 2), range(problem.getHeight() + 2)))
+    non_outer_wall_coords = list(itertools.product(range(1, problem.getWidth() + 1), range(1, problem.getHeight() + 1)))
 
     # map describes what we know, for GUI rendering purposes. -1 is unknown, 0 is open, 1 is wall
-    known_map = [[-1 for y in range(problem.getHeight()+2)] for x in range(problem.getWidth()+2)]
+    known_map = [[-1 for y in range(problem.getHeight() + 2)] for x in range(problem.getWidth() + 2)]
 
     # Pacman knows that the outer border of squares are all walls
     outer_wall_sent = []
@@ -618,11 +618,26 @@ def mapping(problem, agent) -> Generator:
             outer_wall_sent.append(PropSymbolExpr(wall_str, x, y))
     KB.append(conjoin(outer_wall_sent))
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
+    KB.append(~PropSymbolExpr(wall_str, pac_x_0, pac_y_0))
+    known_map[pac_x_0][pac_y_0] = 0
 
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, problem.walls, sensorAxioms,
+                                   allLegalSuccessorAxioms))
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+        for x, y in non_outer_wall_coords:
+            if entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y)):
+                KB.append(~PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 0
+            if entails(conjoin(KB), PropSymbolExpr(wall_str, x, y)):
+                KB.append(PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 1
+
+        agent.moveToNextState(agent.actions[t])
+
         yield known_map
 
 #______________________________________________________________________________
