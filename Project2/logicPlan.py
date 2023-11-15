@@ -427,16 +427,59 @@ def positionLogicPlan(problem) -> List:
     walls_list = walls_grid.asList()
     x0, y0 = problem.startState
     xg, yg = problem.goal
-    
+
     # Get lists of possible locations (i.e. without walls) and possible actions
-    all_coords = list(itertools.product(range(width + 2), 
-            range(height + 2)))
+    all_coords = list(itertools.product(range(width + 2),
+                                        range(height + 2)))
     non_wall_coords = [loc for loc in all_coords if loc not in walls_list]
     actions = [ 'North', 'South', 'East', 'West' ]
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    # for t in range(50) [Autograder will not test on layouts requiring ≥ 50 timesteps]
+    for t in range(0, 50):
+        # Print time step; this is to see that the code is running and how far it is.
+        print("t = ", t)
+
+        # Add to KB: Initial knowledge: Pacman can only be at exactlyOne
+        # of the locations in non_wall_coords at timestep t. This is similar
+        # to pacphysicsAxioms, but don't use that method since we are using
+        # non_wall_coors when generating the list of possible locations in
+        # the first place (and walls_grid later).
+        possibleCoords = []
+        for x, y in non_wall_coords:
+            possibleCoords.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(possibleCoords))
+
+        # Is there a satisfying assignment for the variables given the
+        # knowledge base so far? Use findModel and pass in the Goal Assertion
+        # and KB.
+        # If there is, return a sequence of actions from start to goal
+        # using extractActionSequence.
+        # Here, Goal Assertion is the expression asserting that Pacman
+        # is at the goal at timestep t.
+        model = findModel(
+            conjoin(conjoin(KB), PropSymbolExpr(pacman_str, xg, yg, time=t))
+        )
+        if model:
+            return extractActionSequence(model, actions)
+
+        # Add to KB: Pacman takes exactly one action per timestep.
+        actionlist = []
+        for action in actions:
+            actionlist.append(PropSymbolExpr(action, time=t))
+        KB.append(exactlyOne(actionlist))
+
+        # Add to KB: Transition Model sentences: call
+        # pacmanSuccessorAxiomSingle(...) for all possible pacman
+        # positions in non_wall_coords.
+        transitionModelSentences = []
+        for x, y in non_wall_coords:
+            transitionModelSentences.append(
+                pacmanSuccessorAxiomSingle(x, y, t + 1, walls_grid)
+            )
+        KB += transitionModelSentences
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
