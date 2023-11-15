@@ -567,16 +567,30 @@ def localization(problem, agent) -> Generator:
     '''
     walls_grid = problem.walls
     walls_list = walls_grid.asList()
-    all_coords = list(itertools.product(range(problem.getWidth()+2), range(problem.getHeight()+2)))
-    non_outer_wall_coords = list(itertools.product(range(1, problem.getWidth()+1), range(1, problem.getHeight()+1)))
+    all_coords = list(itertools.product(range(problem.getWidth() + 2), range(problem.getHeight() + 2)))
+    non_outer_wall_coords = list(itertools.product(range(1, problem.getWidth() + 1), range(1, problem.getHeight() + 1)))
 
     KB = []
 
-    "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    KB.append(conjoin([PropSymbolExpr(wall_str, x, y) for x, y in walls_list]))
+    KB.append(conjoin([~PropSymbolExpr(wall_str, x, y) for x, y in non_outer_wall_coords if (x, y) not in walls_list]))
 
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+
+        KB.append(
+            pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, sensorAxioms, allLegalSuccessorAxioms))
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+        possible_locations = []
+        for x, y in non_outer_wall_coords:
+            possible_model = findModel(conjoin(KB) & PropSymbolExpr(pacman_str, x, y, time=t))
+
+            if possible_model:
+                possible_locations.append((x, y))
+
+        agent.moveToNextState(agent.actions[t])
+
         yield possible_locations
 
 #______________________________________________________________________________
