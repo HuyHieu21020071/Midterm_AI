@@ -232,21 +232,21 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
     # the if statements give a small performance boost and are required for q4 and q5 correctness
     if walls_grid[x][y+1] != 1:
         possible_causes.append( PropSymbolExpr(pacman_str, x, y+1, time=last)
-                            & PropSymbolExpr('South', time=last))
+                                & PropSymbolExpr('South', time=last))
     if walls_grid[x][y-1] != 1:
-        possible_causes.append( PropSymbolExpr(pacman_str, x, y-1, time=last) 
-                            & PropSymbolExpr('North', time=last))
+        possible_causes.append( PropSymbolExpr(pacman_str, x, y-1, time=last)
+                                & PropSymbolExpr('North', time=last))
     if walls_grid[x+1][y] != 1:
-        possible_causes.append( PropSymbolExpr(pacman_str, x+1, y, time=last) 
-                            & PropSymbolExpr('West', time=last))
+        possible_causes.append( PropSymbolExpr(pacman_str, x+1, y, time=last)
+                                & PropSymbolExpr('West', time=last))
     if walls_grid[x-1][y] != 1:
-        possible_causes.append( PropSymbolExpr(pacman_str, x-1, y, time=last) 
-                            & PropSymbolExpr('East', time=last))
+        possible_causes.append( PropSymbolExpr(pacman_str, x-1, y, time=last)
+                                & PropSymbolExpr('East', time=last))
     if not possible_causes:
         return None
-    
+
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return PropSymbolExpr(pacman_str, x, y, time=now) % disjoin(possible_causes)
     "*** END YOUR CODE HERE ***"
 
 
@@ -260,16 +260,16 @@ def SLAMSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[bo
     moved_causes: List[Expr] = [] # enumerate all possible causes for P[x,y]_t, assuming moved to having moved
     if walls_grid[x][y+1] != 1:
         moved_causes.append( PropSymbolExpr(pacman_str, x, y+1, time=last)
-                            & PropSymbolExpr('South', time=last))
+                             & PropSymbolExpr('South', time=last))
     if walls_grid[x][y-1] != 1:
-        moved_causes.append( PropSymbolExpr(pacman_str, x, y-1, time=last) 
-                            & PropSymbolExpr('North', time=last))
+        moved_causes.append( PropSymbolExpr(pacman_str, x, y-1, time=last)
+                             & PropSymbolExpr('North', time=last))
     if walls_grid[x+1][y] != 1:
-        moved_causes.append( PropSymbolExpr(pacman_str, x+1, y, time=last) 
-                            & PropSymbolExpr('West', time=last))
+        moved_causes.append( PropSymbolExpr(pacman_str, x+1, y, time=last)
+                             & PropSymbolExpr('West', time=last))
     if walls_grid[x-1][y] != 1:
-        moved_causes.append( PropSymbolExpr(pacman_str, x-1, y, time=last) 
-                            & PropSymbolExpr('East', time=last))
+        moved_causes.append( PropSymbolExpr(pacman_str, x-1, y, time=last)
+                             & PropSymbolExpr('East', time=last))
     if not moved_causes:
         return None
 
@@ -317,7 +317,42 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     pacphysics_sentences = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    walls = []
+
+    for x, y in all_coords:
+        walls.append(
+            PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t)
+        )
+
+    pacphysics_sentences.append(conjoin(walls))
+
+    # Pacman is at exactly one of the squares at timestep t.
+    possible_coordinates = []
+
+    for x, y in non_outer_wall_coords:
+        possible_coordinates.append(PropSymbolExpr(pacman_str, x, y, time=t))
+
+    pacphysics_sentences.append(exactlyOne(possible_coordinates))
+
+    # Pacman takes exactly one action at timestep t.
+    action_took = []
+    for action in DIRECTIONS:
+        action_took.append(PropSymbolExpr(action, time=t))
+
+    pacphysics_sentences.append(exactlyOne(action_took))
+
+    # Results of calling sensorModel(...), unless None.
+    if sensorModel is not None:
+        pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
+
+    # Results of calling successorAxioms(...), describing how Pacman can end in various
+    # locations on this time step. Consider edge cases. Don't call if None.
+    if successorAxioms is not None and t > 0:
+        pacphysics_sentences.append(
+            successorAxioms(t, walls_grid, non_outer_wall_coords)
+        )
+
+    return conjoin(pacphysics_sentences)
     "*** END YOUR CODE HERE ***"
 
     return conjoin(pacphysics_sentences)
@@ -351,7 +386,30 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     KB.append(conjoin(map_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid))
+    KB.append(
+        pacphysicsAxioms(
+            1,
+            all_coords,
+            non_outer_wall_coords,
+            walls_grid,
+            None,
+            allLegalSuccessorAxioms,
+        )
+    )
+
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+
+    KB.append(PropSymbolExpr(action0, time=0))
+
+    KB.append(PropSymbolExpr(action1, time=1))
+
+    model1 = findModel(conjoin(conjoin(KB), PropSymbolExpr(pacman_str, x1, y1, time=1)))
+    model2 = findModel(
+        conjoin(conjoin(KB), ~PropSymbolExpr(pacman_str, x1, y1, time=1))
+    )
+
+    return (model1, model2)
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
