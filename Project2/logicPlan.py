@@ -184,30 +184,36 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return disjoin(literals)
     "*** END YOUR CODE HERE ***"
 
 
 def atMostOne(literals: List[Expr]) -> Expr:
     """
-    Given a list of Expr literals, return a single Expr instance in 
-    CNF (conjunctive normal form) that represents the logic that at most one of 
+    Given a list of Expr literals, return a single Expr instance in
+    CNF (conjunctive normal form) that represents the logic that at most one of
     the expressions in the list is true.
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    P = []
+    combinations = itertools.combinations(literals, 2)
+    for literal1, literal2 in combinations:
+        if literal1 != literal2:
+            P.append(disjoin(~literal1, ~literal2))
+
+    return conjoin(P)
     "*** END YOUR CODE HERE ***"
 
 
 def exactlyOne(literals: List[Expr]) -> Expr:
     """
-    Given a list of Expr literals, return a single Expr instance in 
-    CNF (conjunctive normal form)that represents the logic that exactly one of 
+    Given a list of Expr literals, return a single Expr instance in
+    CNF (conjunctive normal form)that represents the logic that exactly one of
     the expressions in the list is true.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return conjoin(atLeastOne(literals), atMostOne(literals))
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
